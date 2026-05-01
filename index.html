@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-name" content="TradeLog">
+<meta name="theme-color" content="#08090c">
+<title>TradeLog</title>
+<style>
+:root {
+  --bg:#08090c; --s1:#0e1017; --s2:#13161f; --border:#1e2233;
+  --green:#0fdb8a; --red:#f03e5f; --gold:#fbbf24; --blue:#3b82f6;
+  --text:#dde1ee; --muted:#3d4460; --muted2:#5c6482;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;overflow:hidden;}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;display:flex;flex-direction:column;}
+.topbar{background:var(--s1);border-bottom:1px solid var(--border);padding:14px 16px 10px;flex-shrink:0;padding-top:max(14px,env(safe-area-inset-top));}
+.topbar-inner{display:flex;align-items:center;justify-content:space-between;}
+.app-title{font-size:1.3rem;font-weight:800;letter-spacing:3px;color:var(--green);}
+.year-nav{display:flex;align-items:center;gap:10px;}
+.ynbtn{background:var(--s2);border:1px solid var(--border);color:var(--muted2);border-radius:8px;padding:6px 12px;font-size:.8rem;cursor:pointer;}
+#yLabel{font-weight:700;font-size:1rem;color:var(--text);}
+.stats-strip{display:flex;overflow-x:auto;gap:8px;padding:10px 14px;background:var(--s1);border-bottom:1px solid var(--border);flex-shrink:0;-webkit-overflow-scrolling:touch;}
+.stats-strip::-webkit-scrollbar{display:none;}
+.scard{flex-shrink:0;background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;min-width:110px;}
+.scard-lbl{font-size:.5rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted2);margin-bottom:3px;}
+.scard-val{font-size:1.1rem;font-weight:800;line-height:1;}
+.scard-val.g{color:var(--green);}
+.scard-val.r{color:var(--red);}
+.scard-val.gd{color:var(--gold);}
+.scard-val.nt{color:var(--text);}
+.scard-sub{font-size:.5rem;color:var(--muted2);margin-top:2px;}
+.month-tabs{display:flex;overflow-x:auto;gap:4px;padding:8px 12px;flex-shrink:0;background:var(--bg);-webkit-overflow-scrolling:touch;}
+.month-tabs::-webkit-scrollbar{display:none;}
+.mtab{flex-shrink:0;padding:6px 12px;border-radius:20px;border:1px solid var(--border);font-size:.72rem;font-weight:600;color:var(--muted2);cursor:pointer;transition:all .15s;background:var(--s2);}
+.mtab.active{background:var(--green);color:#000;border-color:var(--green);}
+.mtab.has-data{border-color:var(--muted);}
+.scroll-area{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:10px 12px;padding-bottom:max(20px,env(safe-area-inset-bottom));}
+.day-header-row{display:grid;grid-template-columns:28px repeat(5,1fr);gap:4px;margin-bottom:4px;}
+.dhc{font-size:.55rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted2);text-align:center;}
+.week-row{display:grid;grid-template-columns:28px repeat(5,1fr);gap:4px;margin-bottom:4px;}
+.wnum{font-size:.5rem;color:var(--muted);display:flex;align-items:center;justify-content:center;opacity:.5;}
+.day-cell{border-radius:8px;border:1px solid var(--border);background:var(--s2);overflow:hidden;cursor:pointer;min-height:58px;display:flex;flex-direction:column;transition:border-color .15s;}
+.day-cell:active{opacity:.7;}
+.day-cell.today{border-color:var(--green);box-shadow:0 0 0 1px rgba(15,219,138,.2);}
+.day-cell.has-pos{border-color:rgba(15,219,138,.45);background:rgba(15,219,138,.05);}
+.day-cell.has-neg{border-color:rgba(240,62,95,.45);background:rgba(240,62,95,.05);}
+.day-cell.off{opacity:.15;pointer-events:none;background:transparent;border-color:transparent;}
+.dc-date{font-size:.55rem;color:var(--muted2);padding:4px 5px 0;text-align:right;}
+.dc-pnl{font-size:.85rem;font-weight:800;text-align:center;padding:2px 3px;flex:1;display:flex;align-items:center;justify-content:center;line-height:1.1;}
+.dc-pnl.pos{color:var(--green);}
+.dc-pnl.neg{color:var(--red);}
+.dc-pnl.ze{color:var(--muted);}
+.dc-bar{height:2px;background:var(--border);}
+.dc-bar-fill{height:100%;}
+.sheet-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:100;display:none;align-items:flex-end;justify-content:center;}
+.sheet-overlay.open{display:flex;}
+.sheet{background:var(--s1);border-radius:18px 18px 0 0;width:100%;max-width:500px;padding-bottom:max(24px,env(safe-area-inset-bottom));animation:slideUp .3s cubic-bezier(.32,1.2,.64,1);}
+@keyframes slideUp{from{transform:translateY(100%);}to{transform:translateY(0);}}
+.sheet-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:10px auto 0;}
+.sheet-title{font-size:1rem;font-weight:800;letter-spacing:2px;color:var(--green);padding:14px 18px 0;text-transform:uppercase;}
+.sheet-body{padding:14px 18px;display:flex;flex-direction:column;gap:12px;}
+.field label{font-size:.55rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted2);display:block;margin-bottom:4px;}
+.amount-wrap{position:relative;}
+.amt-pre{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:1.3rem;font-weight:800;color:var(--muted2);}
+input.bigamt{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px 12px 12px 30px;color:var(--text);font-size:1.5rem;font-weight:800;width:100%;outline:none;-webkit-appearance:none;}
+input.bigamt:focus{border-color:var(--green);}
+input.bigamt.pos{color:var(--green);}
+input.bigamt.neg{color:var(--red);}
+input[type=text],textarea,select{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:11px 12px;color:var(--text);font-size:.9rem;width:100%;outline:none;-webkit-appearance:none;}
+input[type=text]:focus,textarea:focus,select:focus{border-color:var(--green);}
+select option{background:#111;}
+textarea{resize:none;height:70px;line-height:1.5;}
+.rtg{display:flex;gap:6px;}
+.rb{flex:1;padding:10px;border:1px solid var(--border);border-radius:10px;background:var(--bg);color:var(--muted2);font-size:.75rem;font-weight:700;letter-spacing:1px;cursor:pointer;text-align:center;transition:all .15s;}
+.rb.win.on{background:rgba(15,219,138,.15);border-color:var(--green);color:var(--green);}
+.rb.loss.on{background:rgba(240,62,95,.15);border-color:var(--red);color:var(--red);}
+.rb.be.on{background:rgba(251,191,36,.15);border-color:var(--gold);color:var(--gold);}
+.btn-save{background:var(--green);color:#000;border:none;border-radius:12px;padding:14px;font-size:.85rem;font-weight:800;letter-spacing:1px;cursor:pointer;width:100%;}
+.btn-del{background:none;border:1px solid var(--border);border-radius:12px;padding:12px;font-size:.78rem;color:var(--muted2);cursor:pointer;width:100%;margin-top:-4px;}
+.toast{position:fixed;bottom:max(90px,calc(env(safe-area-inset-bottom)+80px));left:50%;transform:translateX(-50%) translateY(20px);background:var(--s2);border:1px solid var(--green);border-radius:20px;padding:9px 20px;font-size:.75rem;color:var(--green);z-index:200;opacity:0;transition:all .3s;white-space:nowrap;font-weight:600;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="app-title">TRADELOG</div>
+    <div class="year-nav">
+      <button class="ynbtn" onclick="changeYear(-1)">◀</button>
+      <div id="yLabel">2026</div>
+      <button class="ynbtn" onclick="changeYear(1)">▶</button>
+    </div>
+  </div>
+</div>
+<div class="stats-strip">
+  <div class="scard"><div class="scard-lbl">P&L Annuel</div><div class="scard-val nt" id="sPnl">$0.00</div><div class="scard-sub" id="sDays">0 jours</div></div>
+  <div class="scard"><div class="scard-lbl">Win Rate</div><div class="scard-val gd" id="sWr">0%</div><div class="scard-sub" id="sWrS">W:0 L:0</div></div>
+  <div class="scard"><div class="scard-lbl">Best Jour</div><div class="scard-val g" id="sBest">$0.00</div><div class="scard-sub" id="sBestD">—</div></div>
+  <div class="scard"><div class="scard-lbl">Pire Jour</div><div class="scard-val r" id="sWorst">$0.00</div><div class="scard-sub" id="sWorstD">—</div></div>
+  <div class="scard"><div class="scard-lbl">Moy./Jour</div><div class="scard-val nt" id="sAvg">$0.00</div><div class="scard-sub">jours tradés</div></div>
+  <div class="scard"><div class="scard-lbl">Best Mois</div><div class="scard-val gd" id="sBestM">—</div><div class="scard-sub" id="sBestMP">$0.00</div></div>
+</div>
+<div class="month-tabs" id="monthTabs"></div>
+<div class="scroll-area" id="scrollArea"></div>
+<div class="sheet-overlay" id="overlay" onclick="overlayClick(event)">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title" id="sheetTitle">LUNDI 1 JANVIER</div>
+    <div class="sheet-body">
+      <div class="field">
+        <label>Montant P&L — positif = gain, négatif = perte</label>
+        <div class="amount-wrap">
+          <span class="amt-pre">$</span>
+          <input type="number" class="bigamt" id="mAmt" step="0.01" placeholder="0.00" oninput="colorAmt()" inputmode="decimal">
+        </div>
+      </div>
+      <div class="field">
+        <label>Résultat</label>
+        <div class="rtg">
+          <button class="rb win on" onclick="selR(this,'WIN')">✓ WIN</button>
+          <button class="rb loss" onclick="selR(this,'LOSS')">✗ LOSS</button>
+          <button class="rb be" onclick="selR(this,'BE')">— BE</button>
+        </div>
+      </div>
+      <div class="field">
+        <label>Symboles (ex: BTC, SPY)</label>
+        <input type="text" id="mSyms" placeholder="BTC, EURUSD…" oninput="this.value=this.value.toUpperCase()" autocomplete="off">
+      </div>
+      <div class="field">
+        <label>Notes</label>
+        <textarea id="mNotes" placeholder="Ce qui s'est passé…"></textarea>
+      </div>
+      <button class="btn-save" onclick="saveModal()">✓ SAUVEGARDER</button>
+      <button class="btn-del" id="btnDel" onclick="deleteModal()" style="display:none;">Supprimer cette journée</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+var data=JSON.parse(localStorage.getItem('tlog_iphone')||'{}');
+var currentYear=new Date().getFullYear();
+var currentMonth=new Date().getMonth();
+var modalDate=null;
+var curRes='WIN';
+var MFR=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+var MSHORT=['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
+var DFULL=['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+var DSHORT=['L','M','M','J','V'];
+function pad(n){return String(n).padStart(2,'0');}
+function key(y,m,d){return y+'-'+pad(m+1)+'-'+pad(d);}
+function todayKey(){var n=new Date();return key(n.getFullYear(),n.getMonth(),n.getDate());}
+function save(){localStorage.setItem('tlog_iphone',JSON.stringify(data));}
+function changeYear(d){currentYear+=d;renderAll();}
+function switchMonth(m){currentMonth=m;renderMonth();renderTabs();}
+function renderAll(){renderStats();renderTabs();renderMonth();}
+function renderStats(){
+  var yr=currentYear;
+  var keys=Object.keys(data).filter(function(k){return k.startsWith(yr+'-')&&data[k]&&data[k].pnl!==undefined;});
+  var total=keys.reduce(function(s,k){return s+(data[k].pnl||0);},0);
+  var wins=keys.filter(function(k){return data[k].result==='WIN';});
+  var losses=keys.filter(function(k){return data[k].result==='LOSS';});
+  var wr=keys.length?wins.length/keys.length*100:0;
+  var avg=keys.length?total/keys.length:0;
+  var sorted=keys.slice().sort(function(a,b){return(data[b].pnl||0)-(data[a].pnl||0);});
+  var best=sorted[0]||null,worst=sorted[sorted.length-1]||null;
+  var mTotals={};
+  keys.forEach(function(k){var m=parseInt(k.split('-')[1])-1;mTotals[m]=(mTotals[m]||0)+(data[k].pnl||0);});
+  var bm=null,bmv=-Infinity;
+  Object.keys(mTotals).forEach(function(m){if(mTotals[m]>bmv){bmv=mTotals[m];bm=parseInt(m);}});
+  var pe=document.getElementById('sPnl');
+  pe.textContent=(total>=0?'+':'')+'$'+total.toFixed(2);
+  pe.className='scard-val '+(total>0?'g':total<0?'r':'nt');
+  document.getElementById('sDays').textContent=keys.length+' jour'+(keys.length!==1?'s':'');
+  document.getElementById('sWr').textContent=wr.toFixed(0)+'%';
+  document.getElementById('sWrS').textContent='W:'+wins.length+' L:'+losses.length;
+  document.getElementById('sBest').textContent=best?(data[best].pnl>=0?'+':'')+'$'+(data[best].pnl||0).toFixed(2):'$0.00';
+  document.getElementById('sBestD').textContent=best?best:'—';
+  document.getElementById('sWorst').textContent=worst?(data[worst].pnl>=0?'+':'')+'$'+(data[worst].pnl||0).toFixed(2):'$0.00';
+  document.getElementById('sWorstD').textContent=worst?worst:'—';
+  var ae=document.getElementById('sAvg');
+  ae.textContent=(avg>=0?'+':'')+'$'+avg.toFixed(2);
+  ae.className='scard-val '+(avg>0?'g':avg<0?'r':'nt');
+  document.getElementById('sBestM').textContent=bm!==null?MSHORT[bm]:'—';
+  document.getElementById('sBestMP').textContent=bm!==null?(bmv>=0?'+':'')+'$'+bmv.toFixed(2):'$0.00';
+}
+function renderTabs(){
+  var tabs=document.getElementById('monthTabs');
+  tabs.innerHTML='';
+  for(var m=0;m<12;m++){
+    var hasData=Object.keys(data).some(function(k){return k.startsWith(currentYear+'-'+pad(m+1));});
+    var tab=document.createElement('div');
+    tab.className='mtab'+(m===currentMonth?' active':'')+(hasData?' has-data':'');
+    tab.textContent=MSHORT[m];
+    tab.onclick=(function(mm){return function(){switchMonth(mm);};})(m);
+    tabs.appendChild(tab);
+  }
+  var active=tabs.querySelector('.active');
+  if(active) setTimeout(function(){active.scrollIntoView({inline:'center',behavior:'smooth'});},50);
+}
+function renderMonth(){
+  var area=document.getElementById('scrollArea');
+  var m=currentMonth,yr=currentYear;
+  var tk=todayKey();
+  var mKeys=Object.keys(data).filter(function(k){return k.startsWith(yr+'-'+pad(m+1));});
+  var maxP=mKeys.length?Math.max.apply(null,mKeys.map(function(k){return Math.abs(data[k].pnl||0);})):1;
+  var html='<div class="day-header-row"><div class="dhc"></div>';
+  DSHORT.forEach(function(d){html+='<div class="dhc">'+d+'</div>';});
+  html+='</div>';
+  var first=new Date(yr,m,1);
+  var last=new Date(yr,m+1,0);
+  var dow=first.getDay();
+  var offset=dow===0?-6:1-dow;
+  var cursor=new Date(first);
+  cursor.setDate(cursor.getDate()+offset);
+  var wn=1;
+  while(cursor<=last){
+    html+='<div class="week-row"><div class="wnum">S'+wn+'</div>';
+    for(var i=0;i<5;i++){
+      var dd=new Date(cursor);
+      dd.setDate(dd.getDate()+i);
+      var inM=dd.getMonth()===m&&dd.getFullYear()===yr;
+      if(!inM){
+        html+='<div class="day-cell off"></div>';
+      } else {
+        var k=key(yr,m,dd.getDate());
+        var e=data[k]||null;
+        var pnl=e?(e.pnl||0):null;
+        var pc=pnl>0?'pos':pnl<0?'neg':'ze';
+        var pStr=pnl!==null?(pnl>=0?'+':'')+'$'+Math.abs(pnl).toFixed(0):'·';
+        var bp=maxP&&pnl!==null?Math.min(Math.abs(pnl)/maxP*100,100):0;
+        var bc=pnl>=0?'var(--green)':'var(--red)';
+        var cc='day-cell'+(k===tk?' today':'')+(e&&pnl>0?' has-pos':e&&pnl<0?' has-neg':'');
+        html+='<div class="'+cc+'" onclick="openModal(\''+k+'\','+dd.getDate()+','+m+')">'
+          +'<div class="dc-date">'+dd.getDate()+'</div>'
+          +'<div class="dc-pnl '+pc+'">'+pStr+'</div>'
+          +'<div class="dc-bar"><div class="dc-bar-fill" style="width:'+bp+'%;background:'+bc+';"></div></div>'
+          +'</div>';
+      }
+    }
+    html+='</div>';
+    cursor.setDate(cursor.getDate()+7);
+    wn++;
+  }
+  area.innerHTML=html;
+}
+function openModal(k,day,m){
+  modalDate=k;curRes='WIN';
+  var d=new Date(k+'T12:00:00');
+  document.getElementById('sheetTitle').textContent=DFULL[d.getDay()].toUpperCase()+' '+day+' '+MFR[m].toUpperCase();
+  var e=data[k]||{};
+  document.getElementById('mAmt').value=e.pnl!==undefined?e.pnl:'';
+  document.getElementById('mSyms').value=e.symbols||'';
+  document.getElementById('mNotes').value=e.notes||'';
+  curRes=e.result||'WIN';
+  document.querySelectorAll('.rb').forEach(function(b){b.classList.remove('on');});
+  var rb=document.querySelector('.rb.'+curRes.toLowerCase());
+  if(rb) rb.classList.add('on');
+  colorAmt();
+  document.getElementById('btnDel').style.display=e.pnl!==undefined?'block':'none';
+  document.getElementById('overlay').classList.add('open');
+  setTimeout(function(){document.getElementById('mAmt').focus();},200);
+}
+function closeModal(){document.getElementById('overlay').classList.remove('open');modalDate=null;}
+function overlayClick(e){if(e.target===document.getElementById('overlay'))closeModal();}
+function colorAmt(){
+  var v=parseFloat(document.getElementById('mAmt').value);
+  document.getElementById('mAmt').className='bigamt'+(v>0?' pos':v<0?' neg':'');
+}
+function selR(btn,v){
+  curRes=v;
+  document.querySelectorAll('.rb').forEach(function(b){b.classList.remove('on');});
+  btn.classList.add('on');
+}
+function saveModal(){
+  if(!modalDate) return;
+  var pnl=parseFloat(document.getElementById('mAmt').value);
+  if(isNaN(pnl)){showToast('⚠ Entre un montant');return;}
+  if(!data[modalDate]) data[modalDate]={};
+  data[modalDate].pnl=pnl;
+  data[modalDate].result=curRes;
+  data[modalDate].symbols=document.getElementById('mSyms').value.trim();
+  data[modalDate].notes=document.getElementById('mNotes').value.trim();
+  save();closeModal();renderAll();
+  showToast('✓ Sauvegardé');
+}
+function deleteModal(){
+  if(!modalDate||!confirm('Supprimer cette journée ?')) return;
+  delete data[modalDate];
+  save();closeModal();renderAll();
+  showToast('Journée supprimée');
+}
+function showToast(msg){
+  var el=document.getElementById('toast');
+  el.textContent=msg;el.classList.add('show');
+  setTimeout(function(){el.classList.remove('show');},2000);
+}
+renderAll();
+</script>
+</body>
+</html>
