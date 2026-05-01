@@ -17,27 +17,52 @@
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
 html,body{height:100%;overflow:hidden;}
 body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;display:flex;flex-direction:column;}
+
+/* TOPBAR */
 .topbar{background:var(--s1);border-bottom:1px solid var(--border);padding:14px 16px 10px;flex-shrink:0;padding-top:max(14px,env(safe-area-inset-top));}
 .topbar-inner{display:flex;align-items:center;justify-content:space-between;}
 .app-title{font-size:1.3rem;font-weight:800;letter-spacing:3px;color:var(--green);}
-.year-nav{display:flex;align-items:center;gap:10px;}
+.year-nav{display:flex;align-items:center;gap:8px;}
 .ynbtn{background:var(--s2);border:1px solid var(--border);color:var(--muted2);border-radius:8px;padding:6px 12px;font-size:.8rem;cursor:pointer;}
-#yLabel{font-weight:700;font-size:1rem;color:var(--text);}
-.stats-strip{display:flex;overflow-x:auto;gap:8px;padding:10px 14px;background:var(--s1);border-bottom:1px solid var(--border);flex-shrink:0;-webkit-overflow-scrolling:touch;}
-.stats-strip::-webkit-scrollbar{display:none;}
-.scard{flex-shrink:0;background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;min-width:115px;}
-.scard-lbl{font-size:.5rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted2);margin-bottom:3px;}
-.scard-val{font-size:1.1rem;font-weight:800;line-height:1;}
+/* Select année style natif caché, remplacé par bouton custom */
+.year-select-wrap{position:relative;display:flex;align-items:center;}
+select.year-sel{background:var(--s2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:6px 28px 6px 10px;font-size:.9rem;font-weight:700;cursor:pointer;-webkit-appearance:none;appearance:none;outline:none;}
+.year-sel-arrow{position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:.6rem;color:var(--muted2);pointer-events:none;}
+
+/* STATS DROPDOWN */
+.stats-bar{background:var(--s1);border-bottom:1px solid var(--border);flex-shrink:0;}
+.stats-summary{display:flex;align-items:center;justify-content:space-between;padding:8px 14px;cursor:pointer;user-select:none;}
+.stats-summary-left{display:flex;gap:14px;align-items:center;}
+.ss-item{display:flex;flex-direction:column;gap:1px;}
+.ss-lbl{font-size:.48rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted2);}
+.ss-val{font-size:.95rem;font-weight:800;line-height:1;}
+.ss-val.g{color:var(--green);}
+.ss-val.r{color:var(--red);}
+.ss-val.gd{color:var(--gold);}
+.ss-val.nt{color:var(--text);}
+.stats-toggle{font-size:.7rem;color:var(--muted2);padding:4px 8px;background:var(--s2);border:1px solid var(--border);border-radius:6px;}
+
+/* STATS PANEL (déroulant) */
+.stats-panel{display:none;overflow-x:auto;gap:8px;padding:0 14px 10px;-webkit-overflow-scrolling:touch;}
+.stats-panel.open{display:flex;}
+.stats-panel::-webkit-scrollbar{display:none;}
+.scard{flex-shrink:0;background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;min-width:110px;}
+.scard-lbl{font-size:.48rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted2);margin-bottom:3px;}
+.scard-val{font-size:1.05rem;font-weight:800;line-height:1;}
 .scard-val.g{color:var(--green);}
 .scard-val.r{color:var(--red);}
 .scard-val.gd{color:var(--gold);}
 .scard-val.nt{color:var(--text);}
-.scard-sub{font-size:.5rem;color:var(--muted2);margin-top:2px;}
+.scard-sub{font-size:.48rem;color:var(--muted2);margin-top:2px;}
+
+/* MONTH TABS */
 .month-tabs{display:flex;overflow-x:auto;gap:4px;padding:8px 12px;flex-shrink:0;background:var(--bg);-webkit-overflow-scrolling:touch;}
 .month-tabs::-webkit-scrollbar{display:none;}
 .mtab{flex-shrink:0;padding:6px 12px;border-radius:20px;border:1px solid var(--border);font-size:.72rem;font-weight:600;color:var(--muted2);cursor:pointer;background:var(--s2);}
 .mtab.active{background:var(--green);color:#000;border-color:var(--green);}
 .mtab.has-data{border-color:var(--muted);}
+
+/* CALENDAR */
 .scroll-area{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:10px 12px;padding-bottom:max(20px,env(safe-area-inset-bottom));}
 .day-header-row{display:grid;grid-template-columns:24px repeat(7,1fr);gap:3px;margin-bottom:4px;}
 .dhc{font-size:.52rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted2);text-align:center;}
@@ -53,13 +78,15 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
 .day-cell.off{opacity:.1;pointer-events:none;background:transparent;border-color:transparent;}
 .day-cell.weekend{background:#0f1118;}
 .dc-date{font-size:.52rem;color:var(--muted2);padding:3px 4px 0;text-align:right;}
-.dc-pnl{font-size:.78rem;font-weight:800;text-align:center;flex:1;display:flex;align-items:center;justify-content:center;line-height:1.1;padding:2px;}
+.dc-pnl{font-size:.75rem;font-weight:800;text-align:center;flex:1;display:flex;align-items:center;justify-content:center;line-height:1.1;padding:2px;}
 .dc-pnl.win{color:var(--green);}
 .dc-pnl.loss{color:var(--red);}
 .dc-pnl.be{color:var(--gold);}
 .dc-pnl.empty{color:var(--muted);}
 .dc-bar{height:2px;background:var(--border);}
 .dc-bar-fill{height:100%;}
+
+/* SHEET */
 .sheet-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:100;display:none;align-items:flex-end;justify-content:center;}
 .sheet-overlay.open{display:flex;}
 .sheet{background:var(--s1);border-radius:18px 18px 0 0;width:100%;max-width:500px;padding-bottom:max(24px,env(safe-area-inset-bottom));animation:slideUp .3s cubic-bezier(.32,1.2,.64,1);}
@@ -90,27 +117,55 @@ textarea{resize:none;height:70px;line-height:1.5;}
 </style>
 </head>
 <body>
+
+<!-- TOPBAR -->
 <div class="topbar">
   <div class="topbar-inner">
     <div class="app-title">TRADELOG</div>
     <div class="year-nav">
-      <button class="ynbtn" onclick="changeYear(-1)">◀</button>
-      <div id="yLabel">2026</div>
-      <button class="ynbtn" onclick="changeYear(1)">▶</button>
+      <div class="year-select-wrap">
+        <select class="year-sel" id="yearSel" onchange="changeYear(this.value)"></select>
+        <span class="year-sel-arrow">▼</span>
+      </div>
     </div>
   </div>
 </div>
-<div class="stats-strip">
-  <div class="scard"><div class="scard-lbl">P&L Annuel</div><div class="scard-val nt" id="sPnl">$0.00</div><div class="scard-sub" id="sDays">0 jours</div></div>
-  <div class="scard"><div class="scard-lbl">P&L Ce Mois</div><div class="scard-val nt" id="sMPnl">$0.00</div><div class="scard-sub" id="sMDays">0 jours</div></div>
-  <div class="scard"><div class="scard-lbl">Win Rate Mois</div><div class="scard-val gd" id="sMWr">0%</div><div class="scard-sub" id="sMWrS">W:0 L:0</div></div>
-  <div class="scard"><div class="scard-lbl">Best Jour Mois</div><div class="scard-val g" id="sMBest">$0.00</div><div class="scard-sub" id="sMBestD">—</div></div>
-  <div class="scard"><div class="scard-lbl">Moy./Jour Mois</div><div class="scard-val nt" id="sMAvg">$0.00</div><div class="scard-sub">jours tradés</div></div>
-  <div class="scard"><div class="scard-lbl">Win Rate Annuel</div><div class="scard-val gd" id="sWr">0%</div><div class="scard-sub" id="sWrS">W:0 L:0</div></div>
-  <div class="scard"><div class="scard-lbl">Best Mois</div><div class="scard-val gd" id="sBestM">—</div><div class="scard-sub" id="sBestMP">$0.00</div></div>
+
+<!-- STATS BAR (déroulant) -->
+<div class="stats-bar">
+  <div class="stats-summary" onclick="toggleStats()">
+    <div class="stats-summary-left">
+      <div class="ss-item">
+        <span class="ss-lbl">P&L Mois</span>
+        <span class="ss-val nt" id="ssMonthPnl">€0.00</span>
+      </div>
+      <div class="ss-item">
+        <span class="ss-lbl">P&L Annuel</span>
+        <span class="ss-val nt" id="ssYearPnl">€0.00</span>
+      </div>
+      <div class="ss-item">
+        <span class="ss-lbl">Win Rate</span>
+        <span class="ss-val gd" id="ssWr">0%</span>
+      </div>
+    </div>
+    <div class="stats-toggle" id="statsToggleBtn">▼ Stats</div>
+  </div>
+  <div class="stats-panel" id="statsPanel">
+    <div class="scard"><div class="scard-lbl">P&L Ce Mois</div><div class="scard-val nt" id="sMPnl">€0.00</div><div class="scard-sub" id="sMDays">0 jours</div></div>
+    <div class="scard"><div class="scard-lbl">Win Rate Mois</div><div class="scard-val gd" id="sMWr">0%</div><div class="scard-sub" id="sMWrS">W:0 L:0</div></div>
+    <div class="scard"><div class="scard-lbl">Best Jour Mois</div><div class="scard-val g" id="sMBest">€0.00</div><div class="scard-sub" id="sMBestD">—</div></div>
+    <div class="scard"><div class="scard-lbl">Moy./Jour Mois</div><div class="scard-val nt" id="sMAvg">€0.00</div><div class="scard-sub">jours tradés</div></div>
+    <div class="scard"><div class="scard-lbl">P&L Annuel</div><div class="scard-val nt" id="sPnl">€0.00</div><div class="scard-sub" id="sDays">0 jours</div></div>
+    <div class="scard"><div class="scard-lbl">Win Rate Annuel</div><div class="scard-val gd" id="sWr">0%</div><div class="scard-sub" id="sWrS">W:0 L:0</div></div>
+    <div class="scard"><div class="scard-lbl">Best Mois</div><div class="scard-val gd" id="sBestM">—</div><div class="scard-sub" id="sBestMP">€0.00</div></div>
+  </div>
 </div>
+
+<!-- MONTH TABS -->
 <div class="month-tabs" id="monthTabs"></div>
 <div class="scroll-area" id="scrollArea"></div>
+
+<!-- SHEET MODAL -->
 <div class="sheet-overlay" id="overlay" onclick="overlayClick(event)">
   <div class="sheet">
     <div class="sheet-handle"></div>
@@ -125,14 +180,14 @@ textarea{resize:none;height:70px;line-height:1.5;}
         </div>
       </div>
       <div class="field">
-        <label id="amtLabel">Montant gagné ($)</label>
+        <label id="amtLabel">Montant gagné (€)</label>
         <div class="amount-wrap">
-          <span class="amt-pre" id="amtPrefix" style="color:var(--green)">+$</span>
+          <span class="amt-pre" id="amtPrefix" style="color:var(--green)">+€</span>
           <input type="number" class="bigamt win" id="mAmt" step="0.01" placeholder="0.00" inputmode="decimal" min="0">
         </div>
       </div>
       <div class="field">
-        <label>Symboles (ex: BTC, SPY)</label>
+        <label>Symboles (ex: BTC, CAC40)</label>
         <input type="text" id="mSyms" placeholder="BTC, EURUSD…" oninput="this.value=this.value.toUpperCase()" autocomplete="off">
       </div>
       <div class="field">
@@ -145,23 +200,48 @@ textarea{resize:none;height:70px;line-height:1.5;}
   </div>
 </div>
 <div class="toast" id="toast"></div>
+
 <script>
 var data=JSON.parse(localStorage.getItem('tlog_iphone')||'{}');
 var currentYear=new Date().getFullYear();
 var currentMonth=new Date().getMonth();
 var modalDate=null;
 var curRes='WIN';
+var statsOpen=false;
+
 var MFR=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
 var MSHORT=['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
 var DFULL=['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
 var DSHORT=['L','M','M','J','V','S','D'];
+
 function pad(n){return String(n).padStart(2,'0');}
 function key(y,m,d){return y+'-'+pad(m+1)+'-'+pad(d);}
 function todayKey(){var n=new Date();return key(n.getFullYear(),n.getMonth(),n.getDate());}
 function save(){localStorage.setItem('tlog_iphone',JSON.stringify(data));}
-function changeYear(d){currentYear+=d;renderAll();}
+function changeYear(y){currentYear=parseInt(y);renderAll();}
 function switchMonth(m){currentMonth=m;renderAll();}
-function renderAll(){renderStats();renderTabs();renderMonth();}
+function renderAll(){renderYearSelect();renderStats();renderTabs();renderMonth();}
+
+// Rempli le select avec les années
+function renderYearSelect(){
+  var sel=document.getElementById('yearSel');
+  var years=[2024,2025,2026,2027,2028,2029,2030];
+  sel.innerHTML='';
+  years.forEach(function(y){
+    var opt=document.createElement('option');
+    opt.value=y;
+    opt.textContent=y;
+    if(y===currentYear)opt.selected=true;
+    sel.appendChild(opt);
+  });
+}
+
+// Toggle stats panel
+function toggleStats(){
+  statsOpen=!statsOpen;
+  document.getElementById('statsPanel').classList.toggle('open',statsOpen);
+  document.getElementById('statsToggleBtn').textContent=statsOpen?'▲ Fermer':'▼ Stats';
+}
 
 function updateAmountUI(){
   var inp=document.getElementById('mAmt');
@@ -169,16 +249,16 @@ function updateAmountUI(){
   var pre=document.getElementById('amtPrefix');
   inp.className='bigamt '+curRes.toLowerCase();
   if(curRes==='WIN'){
-    lbl.textContent='Montant gagné ($)';
-    pre.textContent='+$';
+    lbl.textContent='Montant gagné (€)';
+    pre.textContent='+€';
     pre.style.color='var(--green)';
   } else if(curRes==='LOSS'){
-    lbl.textContent='Montant perdu ($)';
-    pre.textContent='-$';
+    lbl.textContent='Montant perdu (€)';
+    pre.textContent='-€';
     pre.style.color='var(--red)';
   } else {
-    lbl.textContent='Montant ($)';
-    pre.textContent='=$';
+    lbl.textContent='Montant (€)';
+    pre.textContent='=€';
     pre.style.color='var(--gold)';
   }
 }
@@ -189,6 +269,8 @@ function selR(btn,v){
   btn.classList.add('on');
   updateAmountUI();
 }
+
+function fmt(v){return (v>=0?'+':'')+'€'+Math.abs(v).toFixed(2);}
 
 function renderStats(){
   var yr=currentYear;
@@ -201,6 +283,7 @@ function renderStats(){
   akeys.forEach(function(k){var m=parseInt(k.split('-')[1])-1;mTotals[m]=(mTotals[m]||0)+(data[k].pnl||0);});
   var bm=null,bmv=-Infinity;
   Object.keys(mTotals).forEach(function(m){if(mTotals[m]>bmv){bmv=mTotals[m];bm=parseInt(m);}});
+
   var mprefix=yr+'-'+pad(currentMonth+1);
   var mkeys=akeys.filter(function(k){return k.startsWith(mprefix);});
   var mtotal=mkeys.reduce(function(s,k){return s+(data[k].pnl||0);},0);
@@ -210,24 +293,35 @@ function renderStats(){
   var mavg=mkeys.length?mtotal/mkeys.length:0;
   var mwinkeys=mkeys.filter(function(k){return data[k].result==='WIN';});
   var mbest=mwinkeys.length?mwinkeys.reduce(function(a,b){return(data[a].pnl||0)>(data[b].pnl||0)?a:b;}):null;
+
+  // Summary bar
+  var smp=document.getElementById('ssMonthPnl');
+  smp.textContent=fmt(mtotal);
+  smp.className='ss-val '+(mtotal>0?'g':mtotal<0?'r':'nt');
+  var syp=document.getElementById('ssYearPnl');
+  syp.textContent=fmt(atotal);
+  syp.className='ss-val '+(atotal>0?'g':atotal<0?'r':'nt');
+  document.getElementById('ssWr').textContent=mwr.toFixed(0)+'%';
+
+  // Panel détaillé
   var pe=document.getElementById('sPnl');
-  pe.textContent=(atotal>=0?'+':'')+'$'+atotal.toFixed(2);
+  pe.textContent=fmt(atotal);
   pe.className='scard-val '+(atotal>0?'g':atotal<0?'r':'nt');
   document.getElementById('sDays').textContent=akeys.length+' jour'+(akeys.length!==1?'s':'');
   document.getElementById('sWr').textContent=awr.toFixed(0)+'%';
   document.getElementById('sWrS').textContent='W:'+awins.length+' L:'+alosses.length;
   document.getElementById('sBestM').textContent=bm!==null?MSHORT[bm]:'—';
-  document.getElementById('sBestMP').textContent=bm!==null?(bmv>=0?'+':'')+'$'+bmv.toFixed(2):'$0.00';
+  document.getElementById('sBestMP').textContent=bm!==null?fmt(bmv):'€0.00';
   var mpe=document.getElementById('sMPnl');
-  mpe.textContent=(mtotal>=0?'+':'')+'$'+mtotal.toFixed(2);
+  mpe.textContent=fmt(mtotal);
   mpe.className='scard-val '+(mtotal>0?'g':mtotal<0?'r':'nt');
   document.getElementById('sMDays').textContent=mkeys.length+' jour'+(mkeys.length!==1?'s':'');
   document.getElementById('sMWr').textContent=mwr.toFixed(0)+'%';
   document.getElementById('sMWrS').textContent='W:'+mwins.length+' L:'+mlosses.length;
-  document.getElementById('sMBest').textContent=mbest?'+$'+(data[mbest].pnl||0).toFixed(2):'$0.00';
+  document.getElementById('sMBest').textContent=mbest?'+€'+(data[mbest].pnl||0).toFixed(2):'€0.00';
   document.getElementById('sMBestD').textContent=mbest?mbest:'—';
   var mae=document.getElementById('sMAvg');
-  mae.textContent=(mavg>=0?'+':'')+'$'+mavg.toFixed(2);
+  mae.textContent=fmt(mavg);
   mae.className='scard-val '+(mavg>0?'g':mavg<0?'r':'nt');
 }
 
@@ -281,9 +375,9 @@ function renderMonth(){
         var barColor=res==='WIN'?'var(--green)':res==='LOSS'?'var(--red)':'var(--gold)';
         var pStr='·';
         if(pnl!==null&&res){
-          if(res==='WIN') pStr='+$'+Math.abs(pnl).toFixed(0);
-          else if(res==='LOSS') pStr='-$'+Math.abs(pnl).toFixed(0);
-          else pStr='$'+Math.abs(pnl).toFixed(0);
+          if(res==='WIN') pStr='+€'+Math.abs(pnl).toFixed(0);
+          else if(res==='LOSS') pStr='-€'+Math.abs(pnl).toFixed(0);
+          else pStr='€'+Math.abs(pnl).toFixed(0);
         }
         var bp=maxP&&pnl!==null?Math.min(Math.abs(pnl)/maxP*100,100):0;
         var cc='day-cell'+(k===tk?' today':'')+cellExtra+(isWE?' weekend':'');
@@ -349,6 +443,7 @@ function showToast(msg){
   el.textContent=msg;el.classList.add('show');
   setTimeout(function(){el.classList.remove('show');},2000);
 }
+
 renderAll();
 </script>
 </body>
