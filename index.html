@@ -47,15 +47,17 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
 .day-cell{border-radius:7px;border:1px solid var(--border);background:var(--s2);overflow:hidden;cursor:pointer;min-height:56px;display:flex;flex-direction:column;}
 .day-cell:active{opacity:.7;}
 .day-cell.today{border-color:var(--green);box-shadow:0 0 0 1px rgba(15,219,138,.2);}
-.day-cell.has-pos{border-color:rgba(15,219,138,.5);background:rgba(15,219,138,.05);}
-.day-cell.has-neg{border-color:rgba(240,62,95,.5);background:rgba(240,62,95,.05);}
+.day-cell.is-win{border-color:rgba(15,219,138,.5);background:rgba(15,219,138,.05);}
+.day-cell.is-loss{border-color:rgba(240,62,95,.5);background:rgba(240,62,95,.05);}
+.day-cell.is-be{border-color:rgba(251,191,36,.4);background:rgba(251,191,36,.03);}
 .day-cell.off{opacity:.1;pointer-events:none;background:transparent;border-color:transparent;}
 .day-cell.weekend{background:#0f1118;}
 .dc-date{font-size:.52rem;color:var(--muted2);padding:3px 4px 0;text-align:right;}
 .dc-pnl{font-size:.78rem;font-weight:800;text-align:center;flex:1;display:flex;align-items:center;justify-content:center;line-height:1.1;padding:2px;}
-.dc-pnl.pos{color:var(--green);}
-.dc-pnl.neg{color:var(--red);}
-.dc-pnl.ze{color:var(--muted);}
+.dc-pnl.win{color:var(--green);}
+.dc-pnl.loss{color:var(--red);}
+.dc-pnl.be{color:var(--gold);}
+.dc-pnl.empty{color:var(--muted);}
 .dc-bar{height:2px;background:var(--border);}
 .dc-bar-fill{height:100%;}
 .sheet-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:100;display:none;align-items:flex-end;justify-content:center;}
@@ -67,11 +69,12 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
 .sheet-body{padding:14px 18px;display:flex;flex-direction:column;gap:12px;}
 .field label{font-size:.55rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted2);display:block;margin-bottom:4px;}
 .amount-wrap{position:relative;}
-.amt-pre{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:1.3rem;font-weight:800;color:var(--muted2);}
-input.bigamt{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px 12px 12px 30px;color:var(--text);font-size:1.5rem;font-weight:800;width:100%;outline:none;-webkit-appearance:none;}
+.amt-pre{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:1.3rem;font-weight:800;}
+input.bigamt{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px 12px 12px 36px;color:var(--text);font-size:1.5rem;font-weight:800;width:100%;outline:none;-webkit-appearance:none;}
 input.bigamt:focus{border-color:var(--green);}
-input.bigamt.pos{color:var(--green);}
-input.bigamt.neg{color:var(--red);}
+input.bigamt.win{color:var(--green);}
+input.bigamt.loss{color:var(--red);}
+input.bigamt.be{color:var(--gold);}
 input[type=text],textarea{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:11px 12px;color:var(--text);font-size:.9rem;width:100%;outline:none;-webkit-appearance:none;}
 input[type=text]:focus,textarea:focus{border-color:var(--green);}
 textarea{resize:none;height:70px;line-height:1.5;}
@@ -102,7 +105,6 @@ textarea{resize:none;height:70px;line-height:1.5;}
   <div class="scard"><div class="scard-lbl">P&L Ce Mois</div><div class="scard-val nt" id="sMPnl">$0.00</div><div class="scard-sub" id="sMDays">0 jours</div></div>
   <div class="scard"><div class="scard-lbl">Win Rate Mois</div><div class="scard-val gd" id="sMWr">0%</div><div class="scard-sub" id="sMWrS">W:0 L:0</div></div>
   <div class="scard"><div class="scard-lbl">Best Jour Mois</div><div class="scard-val g" id="sMBest">$0.00</div><div class="scard-sub" id="sMBestD">—</div></div>
-  <div class="scard"><div class="scard-lbl">Pire Jour Mois</div><div class="scard-val r" id="sMWorst">$0.00</div><div class="scard-sub" id="sMWorstD">—</div></div>
   <div class="scard"><div class="scard-lbl">Moy./Jour Mois</div><div class="scard-val nt" id="sMAvg">$0.00</div><div class="scard-sub">jours tradés</div></div>
   <div class="scard"><div class="scard-lbl">Win Rate Annuel</div><div class="scard-val gd" id="sWr">0%</div><div class="scard-sub" id="sWrS">W:0 L:0</div></div>
   <div class="scard"><div class="scard-lbl">Best Mois</div><div class="scard-val gd" id="sBestM">—</div><div class="scard-sub" id="sBestMP">$0.00</div></div>
@@ -115,18 +117,18 @@ textarea{resize:none;height:70px;line-height:1.5;}
     <div class="sheet-title" id="sheetTitle">LUNDI 1 JANVIER</div>
     <div class="sheet-body">
       <div class="field">
-        <label>Montant — positif = gain, négatif = perte</label>
-        <div class="amount-wrap">
-          <span class="amt-pre">$</span>
-          <input type="number" class="bigamt" id="mAmt" step="0.01" placeholder="0.00" oninput="colorAmt()" inputmode="decimal">
-        </div>
-      </div>
-      <div class="field">
-        <label>Résultat</label>
+        <label>Résultat — choisis d'abord</label>
         <div class="rtg">
           <button class="rb win on" onclick="selR(this,'WIN')">✓ WIN</button>
           <button class="rb loss" onclick="selR(this,'LOSS')">✗ LOSS</button>
           <button class="rb be" onclick="selR(this,'BE')">— BE</button>
+        </div>
+      </div>
+      <div class="field">
+        <label id="amtLabel">Montant gagné ($)</label>
+        <div class="amount-wrap">
+          <span class="amt-pre" id="amtPrefix" style="color:var(--green)">+$</span>
+          <input type="number" class="bigamt win" id="mAmt" step="0.01" placeholder="0.00" inputmode="decimal" min="0">
         </div>
       </div>
       <div class="field">
@@ -161,9 +163,35 @@ function changeYear(d){currentYear+=d;renderAll();}
 function switchMonth(m){currentMonth=m;renderAll();}
 function renderAll(){renderStats();renderTabs();renderMonth();}
 
+function updateAmountUI(){
+  var inp=document.getElementById('mAmt');
+  var lbl=document.getElementById('amtLabel');
+  var pre=document.getElementById('amtPrefix');
+  inp.className='bigamt '+curRes.toLowerCase();
+  if(curRes==='WIN'){
+    lbl.textContent='Montant gagné ($)';
+    pre.textContent='+$';
+    pre.style.color='var(--green)';
+  } else if(curRes==='LOSS'){
+    lbl.textContent='Montant perdu ($)';
+    pre.textContent='-$';
+    pre.style.color='var(--red)';
+  } else {
+    lbl.textContent='Montant ($)';
+    pre.textContent='=$';
+    pre.style.color='var(--gold)';
+  }
+}
+
+function selR(btn,v){
+  curRes=v;
+  document.querySelectorAll('.rb').forEach(function(b){b.classList.remove('on');});
+  btn.classList.add('on');
+  updateAmountUI();
+}
+
 function renderStats(){
   var yr=currentYear;
-  // Annuel
   var akeys=Object.keys(data).filter(function(k){return k.startsWith(yr+'-')&&data[k]&&data[k].pnl!==undefined;});
   var atotal=akeys.reduce(function(s,k){return s+(data[k].pnl||0);},0);
   var awins=akeys.filter(function(k){return data[k].result==='WIN';});
@@ -173,8 +201,6 @@ function renderStats(){
   akeys.forEach(function(k){var m=parseInt(k.split('-')[1])-1;mTotals[m]=(mTotals[m]||0)+(data[k].pnl||0);});
   var bm=null,bmv=-Infinity;
   Object.keys(mTotals).forEach(function(m){if(mTotals[m]>bmv){bmv=mTotals[m];bm=parseInt(m);}});
-
-  // Mensuel
   var mprefix=yr+'-'+pad(currentMonth+1);
   var mkeys=akeys.filter(function(k){return k.startsWith(mprefix);});
   var mtotal=mkeys.reduce(function(s,k){return s+(data[k].pnl||0);},0);
@@ -182,10 +208,8 @@ function renderStats(){
   var mlosses=mkeys.filter(function(k){return data[k].result==='LOSS';});
   var mwr=mkeys.length?mwins.length/mkeys.length*100:0;
   var mavg=mkeys.length?mtotal/mkeys.length:0;
-  var msorted=mkeys.slice().sort(function(a,b){return(data[b].pnl||0)-(data[a].pnl||0);});
-  var mbest=msorted[0]||null,mworst=msorted[msorted.length-1]||null;
-
-  // Affichage annuel
+  var mwinkeys=mkeys.filter(function(k){return data[k].result==='WIN';});
+  var mbest=mwinkeys.length?mwinkeys.reduce(function(a,b){return(data[a].pnl||0)>(data[b].pnl||0)?a:b;}):null;
   var pe=document.getElementById('sPnl');
   pe.textContent=(atotal>=0?'+':'')+'$'+atotal.toFixed(2);
   pe.className='scard-val '+(atotal>0?'g':atotal<0?'r':'nt');
@@ -194,18 +218,14 @@ function renderStats(){
   document.getElementById('sWrS').textContent='W:'+awins.length+' L:'+alosses.length;
   document.getElementById('sBestM').textContent=bm!==null?MSHORT[bm]:'—';
   document.getElementById('sBestMP').textContent=bm!==null?(bmv>=0?'+':'')+'$'+bmv.toFixed(2):'$0.00';
-
-  // Affichage mensuel
   var mpe=document.getElementById('sMPnl');
   mpe.textContent=(mtotal>=0?'+':'')+'$'+mtotal.toFixed(2);
   mpe.className='scard-val '+(mtotal>0?'g':mtotal<0?'r':'nt');
   document.getElementById('sMDays').textContent=mkeys.length+' jour'+(mkeys.length!==1?'s':'');
   document.getElementById('sMWr').textContent=mwr.toFixed(0)+'%';
   document.getElementById('sMWrS').textContent='W:'+mwins.length+' L:'+mlosses.length;
-  document.getElementById('sMBest').textContent=mbest?(data[mbest].pnl>=0?'+':'')+'$'+(data[mbest].pnl||0).toFixed(2):'$0.00';
+  document.getElementById('sMBest').textContent=mbest?'+$'+(data[mbest].pnl||0).toFixed(2):'$0.00';
   document.getElementById('sMBestD').textContent=mbest?mbest:'—';
-  document.getElementById('sMWorst').textContent=mworst?(data[mworst].pnl>=0?'+':'')+'$'+(data[mworst].pnl||0).toFixed(2):'$0.00';
-  document.getElementById('sMWorstD').textContent=mworst?mworst:'—';
   var mae=document.getElementById('sMAvg');
   mae.textContent=(mavg>=0?'+':'')+'$'+mavg.toFixed(2);
   mae.className='scard-val '+(mavg>0?'g':mavg<0?'r':'nt');
@@ -255,16 +275,22 @@ function renderMonth(){
         var k=key(yr,m,dd.getDate());
         var e=data[k]||null;
         var pnl=e?(e.pnl||0):null;
-        // ROUGE si perte, VERT si gain
-        var pc=pnl>0?'pos':pnl<0?'neg':'ze';
-        var pStr=pnl!==null?(pnl>=0?'+':'')+'$'+Math.abs(pnl).toFixed(0):'·';
+        var res=e?e.result:null;
+        var pnlClass=res==='WIN'?'win':res==='LOSS'?'loss':res==='BE'?'be':'empty';
+        var cellExtra=res==='WIN'?' is-win':res==='LOSS'?' is-loss':res==='BE'?' is-be':'';
+        var barColor=res==='WIN'?'var(--green)':res==='LOSS'?'var(--red)':'var(--gold)';
+        var pStr='·';
+        if(pnl!==null&&res){
+          if(res==='WIN') pStr='+$'+Math.abs(pnl).toFixed(0);
+          else if(res==='LOSS') pStr='-$'+Math.abs(pnl).toFixed(0);
+          else pStr='$'+Math.abs(pnl).toFixed(0);
+        }
         var bp=maxP&&pnl!==null?Math.min(Math.abs(pnl)/maxP*100,100):0;
-        var bc=pnl>0?'var(--green)':'var(--red)';
-        var cc='day-cell'+(k===tk?' today':'')+(e&&pnl>0?' has-pos':e&&pnl<0?' has-neg':'')+(isWE?' weekend':'');
+        var cc='day-cell'+(k===tk?' today':'')+cellExtra+(isWE?' weekend':'');
         html+='<div class="'+cc+'" onclick="openModal(\''+k+'\','+dd.getDate()+','+m+')">'
           +'<div class="dc-date">'+dd.getDate()+'</div>'
-          +'<div class="dc-pnl '+pc+'">'+pStr+'</div>'
-          +'<div class="dc-bar"><div class="dc-bar-fill" style="width:'+bp+'%;background:'+bc+';"></div></div>'
+          +'<div class="dc-pnl '+pnlClass+'">'+pStr+'</div>'
+          +'<div class="dc-bar"><div class="dc-bar-fill" style="width:'+bp+'%;background:'+barColor+';"></div></div>'
           +'</div>';
       }
     }
@@ -276,37 +302,32 @@ function renderMonth(){
 }
 
 function openModal(k,day,m){
-  modalDate=k;curRes='WIN';
+  modalDate=k;
   var d=new Date(k+'T12:00:00');
   document.getElementById('sheetTitle').textContent=DFULL[d.getDay()].toUpperCase()+' '+day+' '+MFR[m].toUpperCase();
   var e=data[k]||{};
-  document.getElementById('mAmt').value=e.pnl!==undefined?e.pnl:'';
+  document.getElementById('mAmt').value=e.pnl!==undefined?Math.abs(e.pnl):'';
   document.getElementById('mSyms').value=e.symbols||'';
   document.getElementById('mNotes').value=e.notes||'';
   curRes=e.result||'WIN';
   document.querySelectorAll('.rb').forEach(function(b){b.classList.remove('on');});
   var rb=document.querySelector('.rb.'+curRes.toLowerCase());
   if(rb)rb.classList.add('on');
-  colorAmt();
+  updateAmountUI();
   document.getElementById('btnDel').style.display=e.pnl!==undefined?'block':'none';
   document.getElementById('overlay').classList.add('open');
   setTimeout(function(){document.getElementById('mAmt').focus();},200);
 }
+
 function closeModal(){document.getElementById('overlay').classList.remove('open');modalDate=null;}
 function overlayClick(e){if(e.target===document.getElementById('overlay'))closeModal();}
-function colorAmt(){
-  var v=parseFloat(document.getElementById('mAmt').value);
-  document.getElementById('mAmt').className='bigamt'+(v>0?' pos':v<0?' neg':'');
-}
-function selR(btn,v){
-  curRes=v;
-  document.querySelectorAll('.rb').forEach(function(b){b.classList.remove('on');});
-  btn.classList.add('on');
-}
+
 function saveModal(){
   if(!modalDate)return;
-  var pnl=parseFloat(document.getElementById('mAmt').value);
-  if(isNaN(pnl)){showToast('⚠ Entre un montant');return;}
+  var raw=parseFloat(document.getElementById('mAmt').value);
+  if(isNaN(raw)){showToast('⚠ Entre un montant');return;}
+  var pnl=Math.abs(raw);
+  if(curRes==='LOSS')pnl=-pnl;
   if(!data[modalDate])data[modalDate]={};
   data[modalDate].pnl=pnl;
   data[modalDate].result=curRes;
@@ -315,12 +336,14 @@ function saveModal(){
   save();closeModal();renderAll();
   showToast('✓ Sauvegardé');
 }
+
 function deleteModal(){
   if(!modalDate||!confirm('Supprimer cette journée ?'))return;
   delete data[modalDate];
   save();closeModal();renderAll();
   showToast('Journée supprimée');
 }
+
 function showToast(msg){
   var el=document.getElementById('toast');
   el.textContent=msg;el.classList.add('show');
