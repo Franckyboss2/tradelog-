@@ -290,13 +290,17 @@ function todayKey(){var n=new Date();return key(n.getFullYear(),n.getMonth(),n.g
 function save(){localStorage.setItem('tlog_iphone',JSON.stringify(data));}
 function changeYear(y){currentYear=parseInt(y);renderAll();}
 function switchMonth(m){currentMonth=m;renderAll();}
+
 function shiftMonth(d){
   currentMonth+=d;
   if(currentMonth<0){currentMonth=11;currentYear--;}
   if(currentMonth>11){currentMonth=0;currentYear++;}
-  document.getElementById('yearSel').value=currentYear;
+  // Met à jour le select année visuellement
+  var sel=document.getElementById('yearSel');
+  if(sel) sel.value=currentYear;
   renderAll();
 }
+
 function renderAll(){renderYearSelect();renderStats();renderTabs();renderMonth();}
 
 function applyTheme(t){
@@ -472,13 +476,21 @@ function renderMonth(){
 
 function initSwipe(el){
   var startX=0,startY=0,moved=false;
-  el.addEventListener('touchstart',function(e){startX=e.touches[0].clientX;startY=e.touches[0].clientY;moved=false;},{passive:true});
+  el.addEventListener('touchstart',function(e){
+    startX=e.touches[0].clientX;
+    startY=e.touches[0].clientY;
+    moved=false;
+  },{passive:true});
   el.addEventListener('touchmove',function(){moved=true;},{passive:true});
   el.addEventListener('touchend',function(e){
     if(!moved)return;
     var dx=e.changedTouches[0].clientX-startX;
     var dy=e.changedTouches[0].clientY-startY;
-    if(Math.abs(dx)>Math.abs(dy)*1.5&&Math.abs(dx)>50){dx<0?shiftMonth(1):shiftMonth(-1);}
+    // Swipe horizontal strict : 2x plus large que vertical et min 60px
+    if(Math.abs(dx)>Math.abs(dy)*2&&Math.abs(dx)>60){
+      if(dx<0)shiftMonth(1);
+      else shiftMonth(-1);
+    }
   },{passive:true});
 }
 
