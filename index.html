@@ -196,6 +196,8 @@ input.amt-inp.be{color:var(--gold);}
     <div class="side-section">Outils</div>
     <div class="side-item" onclick="openSettings()"><span class="side-icon">🎨</span><span class="side-label">Paramètres & Thème</span></div>
     <div class="side-section">Données</div>
+    <div class="side-item" onclick="openImport()"><span class="side-icon">📥</span><span class="side-label">Importer des trades</span></div>
+    <input type="file" id="importFile" accept=".json,application/json" style="display:none" onchange="importData(this)">
     <div class="side-item" onclick="exportData()"><span class="side-icon">📤</span><span class="side-label">Exporter mes données</span></div>
     <div class="side-item" onclick="clearConfirm()"><span class="side-icon">🗑️</span><span class="side-label">Effacer toutes les données</span></div>
   </div>
@@ -386,6 +388,63 @@ function exportData(){
   var url=URL.createObjectURL(blob);
   var a=document.createElement('a');a.href=url;a.download='journal_compte.json';a.click();
   showToast('✓ Export téléchargé');
+}
+function openImport(){
+  closeSideMenu();
+  document.getElementById('importFile').click();
+}
+function normTrade(t){
+  if(!t||typeof t!=='object')return null;
+  var pnl=parseFloat(t.pnl);
+  if(isNaN(pnl))return null;
+  var res=String(t.result||'').toUpperCase();
+  if(res!=='WIN'&&res!=='LOSS'&&res!=='BE')res=pnl>0?'WIN':(pnl<0?'LOSS':'BE');
+  if(res==='LOSS')pnl=-Math.abs(pnl);
+  if(res==='WIN')pnl=Math.abs(pnl);
+  return {
+    id:(t.id!==undefined&&t.id!==null&&t.id!=='')?t.id:('imp-'+Date.now()+'-'+Math.random().toString(36).slice(2,8)),
+    pnl:Math.round(pnl*100)/100,
+    result:res,
+    sym:String(t.sym||'').trim().toUpperCase(),
+    note:String(t.note||'').trim()
+  };
+}
+function importData(input){
+  var file=input.files&&input.files[0];
+  if(!file)return;
+  var reader=new FileReader();
+  reader.onload=function(){
+    var src;
+    try{src=JSON.parse(reader.result);}catch(e){showToast('⚠ Fichier illisible');input.value='';return;}
+    // Accepte le format d'export {"AAAA-MM-JJ":{trades:[...]}}
+    // ou une liste {trades:[{date:"AAAA-MM-JJ",...}]}
+    var byDay={};
+    if(src&&Array.isArray(src.trades)){
+      src.trades.forEach(function(t){if(t&&/^\d{4}-\d{2}-\d{2}$/.test(t.date||'')){(byDay[t.date]=byDay[t.date]||[]).push(t);}});
+    }else if(src&&typeof src==='object'){
+      Object.keys(src).forEach(function(k){
+        if(/^\d{4}-\d{2}-\d{2}$/.test(k)&&src[k]&&Array.isArray(src[k].trades))byDay[k]=src[k].trades;
+      });
+    }
+    var added=0,skipped=0;
+    Object.keys(byDay).forEach(function(k){
+      if(!data[k])data[k]={trades:[]};
+      if(!data[k].trades)data[k].trades=[];
+      var ids={};data[k].trades.forEach(function(t){ids[String(t.id)]=true;});
+      byDay[k].forEach(function(raw){
+        var t=normTrade(raw);
+        if(!t){skipped++;return;}
+        if(ids[String(t.id)]){skipped++;return;}
+        data[k].trades.push(t);ids[String(t.id)]=true;added++;
+      });
+      if(!data[k].trades.length)delete data[k];
+    });
+    input.value='';
+    if(!added&&!skipped){showToast('⚠ Aucun trade trouvé');return;}
+    save();renderAll();
+    showToast('✓ '+added+' trade'+(added>1?'s':'')+' importé'+(added>1?'s':'')+(skipped?' · '+skipped+' ignoré'+(skipped>1?'s':''):''));
+  };
+  reader.readAsText(file);
 }
 function clearConfirm(){
   closeSideMenu();
